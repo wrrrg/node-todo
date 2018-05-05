@@ -5,10 +5,13 @@ var { mongoose } = require("./db/mongoose.js");
 var { Todo } = require("./models/todo");
 var { User } = require("./models/user");
 
+const { ObjectID } = require("mongodb");
+
 var app = express();
 
 app.use(bodyParser.json());
 
+// Post a Todo
 app.post("/todos", (req, res) => {
   console.log(req.body);
   var todo = new Todo({
@@ -25,6 +28,7 @@ app.post("/todos", (req, res) => {
   );
 });
 
+// Get All Todos
 app.get("/todos", (req, res) => {
   console.log(req.body);
   Todo.find().then(
@@ -36,6 +40,31 @@ app.get("/todos", (req, res) => {
       res.status(400).send(e);
     }
   );
+});
+
+app.get("/todos/:id", (req, res) => {
+  var id = req.params.id;
+
+  if (!ObjectID.isValid(req.params.id)) {
+    res.status(404).send("Invalid User ID");
+    res.end();
+  } else {
+    Todo.findById({ _id: id }).then(
+      todo => {
+        if (!todo) {
+          res.status(404).send("No Todo Found");
+          console.log("No Todo Found");
+          res.end();
+        } else {
+          res.send({ todo });
+          console.log({ todo });
+        }
+      },
+      e => {
+        res.status(400).send(e);
+      }
+    );
+  }
 });
 
 app.listen(3000, () => {
