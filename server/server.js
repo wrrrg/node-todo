@@ -46,7 +46,7 @@ app.get("/todos/:id", (req, res) => {
   var id = req.params.id;
 
   if (!ObjectID.isValid(req.params.id)) {
-    res.status(404).send("Invalid User ID");
+    res.status(404).send("Invalid Todo ID");
     res.end();
   } else {
     Todo.findById({ _id: id }).then(
@@ -56,10 +56,43 @@ app.get("/todos/:id", (req, res) => {
           console.log("No Todo Found");
           res.end();
         } else {
-          res.send({ todo });
+          res.status(200).send({ todo });
         }
       },
       e => {
+        res.status(400).send(e);
+      }
+    );
+  }
+});
+
+//delete todos
+
+app.delete("/todos/:id", (req, res) => {
+  var id = req.params.id;
+
+  if (!ObjectID.isValid(req.params.id)) {
+    res.status(404).send("Invalid Todo ID");
+    res.end();
+  } else {
+    //remove todo by ID
+    Todo.findByIdAndRemove({ _id: id }).then(
+      //success
+      todo => {
+        //if no doc, send 404
+        if (!todo) {
+          res.status(404).send("No Todo Found");
+          console.log("No Todo Found");
+          res.end();
+        } else {
+          //found ID send and remove
+          res.status(200).send({ todo });
+        }
+      },
+      //error
+
+      e => {
+        //400 empty body
         res.status(400).send(e);
       }
     );
