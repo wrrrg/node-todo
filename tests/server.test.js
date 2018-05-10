@@ -12,7 +12,9 @@ const todos = [
   },
   {
     _id: new ObjectID(),
-    text: "second test todo"
+    text: "second test todo",
+    completed: true,
+    completedAt: 333
   }
 ];
 
@@ -146,5 +148,62 @@ describe("DELETE /todos/:id", () => {
       .delete(`/todos/123`)
       .expect(404)
       .end(done);
+  });
+});
+
+describe("PATCH /todos/:id", () => {
+  it("should update the todo", done => {
+    var hexId = todos[0]._id.toHexString();
+    var text = "patch test text";
+    var completed = true;
+    request(app)
+      .patch(`/todos/${hexId}`)
+      .send({ text, completed })
+      .expect(200)
+      .expect(res => {
+        expect(res.body.todo.text).toBe("patch test text");
+        expect(res.body.todo.completed).toBe(true);
+        expect(res.body.todo.completedAt).toBeA("number");
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        Todo.find({ text })
+          .then(todos => {
+            expect(todos.length).toBe(1);
+            expect(todos[0].text).toBe(text);
+            console.log(JSON.stringify(todos[0], undefined, 2));
+            done();
+          })
+          .catch(e => done(e));
+      });
+  });
+
+  it("should clear completedAt when todo is not completed", done => {
+    var hexId = todos[1]._id.toHexString();
+    var text = "patch test text complete false";
+    var completed = false;
+    request(app)
+      .patch(`/todos/${hexId}`)
+      .send({ text, completed })
+      .expect(200)
+      .expect(res => {
+        expect(res.body.todo.text).toBe("patch test text complete false");
+        expect(res.body.todo.completed).toBe(false);
+        expect(res.body.todo.completedAt).toNotExist();
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        Todo.find({ text })
+          .then(todos => {
+            expect(todos.length).toBe(1);
+            expect(todos[0].text).toBe(text);
+            done();
+          })
+          .catch(e => done(e));
+      });
   });
 });
