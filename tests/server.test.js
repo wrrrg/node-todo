@@ -257,7 +257,7 @@ describe("POSt /users", () => {
   });
 
   it("shouldn't create a new user with a duplicate email", done => {
-    var email = "notoken@example.com";
+    var email = users[0].email;
     var password = "validpassword";
 
     request(app)
