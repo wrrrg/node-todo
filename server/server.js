@@ -1,17 +1,8 @@
-var env = process.env.NODE_ENV || "development";
-console.log("env ****", env);
+require("./config/config");
 
-if (env === "development") {
-  process.env.PORT = 3000;
-  process.env.MONGODB_URI = "mongodb://localhost:27017/TodoApp";
-} else if (env === "test") {
-  process.env.PORT = 3000;
-  process.env.MONGODB_URI = "mongodb://localhost:27017/TodoApp-Test";
-}
-
-var _ = require("lodash");
-var express = require("express");
-var bodyParser = require("body-parser");
+const _ = require("lodash");
+const express = require("express");
+const bodyParser = require("body-parser");
 
 var { mongoose } = require("./db/mongoose.js");
 var { Todo } = require("./models/todo");
@@ -27,7 +18,6 @@ app.use(bodyParser.json());
 
 // Post a Todo
 app.post("/todos", (req, res) => {
-  console.log(req.body);
   var todo = new Todo({
     text: req.body.text
   });
