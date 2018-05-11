@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
+const bcrypt = require("bcryptjs");
 
 var UserSchema = new mongoose.Schema({
   email: {
@@ -33,24 +34,8 @@ var UserSchema = new mongoose.Schema({
     }
   ]
 });
-//model methods go on .statics, instance methods go on .methods.
-UserSchema.statics.findByToken = function(token) {
-  var User = this;
-  var decoded;
 
-  try {
-    decoded = jwt.verify(token, "abc123");
-  } catch (e) {
-    return Promise.reject();
-  }
-  //we use quotes to access nested values on the user model
-  return User.findOne({
-    _id: decoded._id,
-    "tokens.token": token,
-    "tokens.access": "auth"
-  });
-};
-
+// instance methods get saved to the .methods
 //this method overrides a default mongoose method to affect what we send back to the client
 UserSchema.methods.toJSON = function() {
   var user = this;
@@ -71,6 +56,44 @@ UserSchema.methods.generateAuthToken = function() {
     return token;
   });
 };
+
+//model methods go on .statics, instance methods go on .methods.
+UserSchema.statics.findByToken = function(token) {
+  var User = this;
+  var decoded;
+
+  try {
+    decoded = jwt.verify(token, "abc123");
+  } catch (e) {
+    return Promise.reject();
+  }
+  //we use quotes to access nested values on the user model
+  return User.findOne({
+    _id: decoded._id,
+    "tokens.token": token,
+    "tokens.access": "auth"
+  });
+};
+//mongoose middleware to hash passwords before we save the user
+// we use a regular function instead of arrow so we have access to 'this' variable, and we have to call next() or it will never proceed
+UserSchema.pre("save", function(next) {
+  var user = this;
+
+  // this way we only hash the password when the password is modified, everything else doesn't matter
+  if (user.isModified("password")) {
+    //user.password gives us access to the password, here is where we hash it
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(user.password, salt, (err, hash) => {
+        //here we set the user password = the hashed password
+        user.password = hash;
+        // here we move on if everything is successful
+        next();
+      });
+    });
+  } else {
+    next();
+  }
+});
 
 var User = mongoose.model("User", UserSchema);
 
