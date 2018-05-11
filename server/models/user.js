@@ -33,6 +33,23 @@ var UserSchema = new mongoose.Schema({
     }
   ]
 });
+//model methods go on .statics, instance methods go on .methods.
+UserSchema.statics.findByToken = function(token) {
+  var User = this;
+  var decoded;
+
+  try {
+    decoded = jwt.verify(token, "abc123");
+  } catch (e) {
+    return Promise.reject();
+  }
+  //we use quotes to access nested values on the user model
+  return User.findOne({
+    _id: decoded._id,
+    "tokens.token": token,
+    "tokens.access": "auth"
+  });
+};
 
 //this method overrides a default mongoose method to affect what we send back to the client
 UserSchema.methods.toJSON = function() {
