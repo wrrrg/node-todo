@@ -196,6 +196,20 @@ app.post("/users/login", (req, res) => {
     });
 });
 
+// logout DELETE route for users/me/token - delete the token so that a new one is made next time you login
+
+app.delete("/users/me/token", authenticate, (req, res) => {
+  // this is a custome instance method we're going to write to remove the existing token
+  req.user.removeToken(req.token).then(
+    () => {
+      res.status(200).send();
+    },
+    () => {
+      res.status(400).send();
+    }
+  );
+});
+
 app.listen(PORT, () => {
   console.log(`Started on ${PORT}!!`);
 });
