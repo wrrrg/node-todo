@@ -176,6 +176,26 @@ app.get("/users", (req, res) => {
   );
 });
 
+// post login user route sending {email, password}, checking for match with hash password and submitted password
+
+app.post("/users/login", (req, res) => {
+  var body = _.pick(req.body, ["email", "password"]);
+
+  var email = body.email;
+  var password = body.password;
+  var hashedPassword = "";
+
+  User.findByCredentials(body.email, body.password)
+    .then(user => {
+      return user.generateAuthToken().then(token => {
+        res.header("x-auth", token).send(user);
+      });
+    })
+    .catch(e => {
+      res.status(400).send();
+    });
+});
+
 app.listen(PORT, () => {
   console.log(`Started on ${PORT}!!`);
 });

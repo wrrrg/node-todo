@@ -74,6 +74,32 @@ UserSchema.statics.findByToken = function(token) {
     "tokens.access": "auth"
   });
 };
+
+//logging in with credentials
+// User.findByCredentials(body.email, body.password).then(user => {
+//
+// }).catch(e => {
+//
+// })
+UserSchema.statics.findByCredentials = function(email, password) {
+  var User = this;
+  return User.findOne({ email }).then(user => {
+    if (!user) {
+      return Promise.reject();
+    }
+
+    return new Promise((resolve, reject) => {
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res) {
+          resolve(user);
+        } else {
+          reject();
+        }
+      });
+    });
+  });
+};
+
 //mongoose middleware to hash passwords before we save the user
 // we use a regular function instead of arrow so we have access to 'this' variable, and we have to call next() or it will never proceed
 UserSchema.pre("save", function(next) {
