@@ -17,9 +17,10 @@ var app = express();
 app.use(bodyParser.json());
 
 // Post a Todo
-app.post("/todos", (req, res) => {
+app.post("/todos", authenticate, (req, res) => {
   var todo = new Todo({
-    text: req.body.text
+    text: req.body.text,
+    _creator: req.user._id
   });
 
   todo.save().then(
@@ -33,9 +34,11 @@ app.post("/todos", (req, res) => {
 });
 
 // Get All Todos
-app.get("/todos", (req, res) => {
+app.get("/todos", authenticate, (req, res) => {
   // console.log(req.body);
-  Todo.find().then(
+  Todo.find({
+    _creator: req.user._id
+  }).then(
     todos => {
       res.send({ todos });
     },
@@ -45,18 +48,17 @@ app.get("/todos", (req, res) => {
   );
 });
 
-app.get("/todos/:id", (req, res) => {
+app.get("/todos/:id", authenticate, (req, res) => {
   var id = req.params.id;
 
   if (!ObjectID.isValid(req.params.id)) {
     res.status(404).send("Invalid Todo ID");
     res.end();
   } else {
-    Todo.findById({ _id: id }).then(
+    Todo.findOne({ _id: id, _creator: req.user._id }).then(
       todo => {
         if (!todo) {
           res.status(404).send("No Todo Found");
-          console.log("No Todo Found");
           res.end();
         } else {
           res.status(200).send({ todo });
@@ -71,7 +73,7 @@ app.get("/todos/:id", (req, res) => {
 
 // patch route (partial updates, use put for full replacements)
 
-app.patch("/todos/:id", (req, res) => {
+app.patch("/todos/:id", authenticate, (req, res) => {
   var id = req.params.id;
   var body = _.pick(req.body, ["text", "completed"]);
 
@@ -86,7 +88,11 @@ app.patch("/todos/:id", (req, res) => {
       body.completedAt = null;
     }
 
-    Todo.findByIdAndUpdate(id, { $set: body }, { new: true })
+    Todo.findOneAndUpdate(
+      { _id: req.params.id, _creator: req.user._id },
+      { $set: body },
+      { new: true }
+    )
       .then(todo => {
         if (!todo) {
           return res.status(404).send();
@@ -102,21 +108,21 @@ app.patch("/todos/:id", (req, res) => {
 
 //delete todos
 
-app.delete("/todos/:id", (req, res) => {
+app.delete("/todos/:id", authenticate, (req, res) => {
   var id = req.params.id;
+  var _creator = req.user._id;
 
   if (!ObjectID.isValid(req.params.id)) {
     res.status(404).send("Invalid Todo ID");
     res.end();
   } else {
     //remove todo by ID
-    Todo.findByIdAndRemove({ _id: id }).then(
+    Todo.findOneAndRemove({ _id: id, _creator }).then(
       //success
       todo => {
         //if no doc, send 404
         if (!todo) {
           res.status(404).send("No Todo Found");
-          console.log("No Todo Found");
           res.end();
         } else {
           //found ID send and remove
